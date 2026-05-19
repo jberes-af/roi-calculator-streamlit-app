@@ -1,0 +1,11 @@
+[project]
+name = "customer-savings"
+version = "0.1.0"
+dependencies = [
+    "streamlit",
+    "pandas",
+    "numpy",
+]
+
+[tool.setuptools]
+package-dir = {"" = "."}
