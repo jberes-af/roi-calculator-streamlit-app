@@ -29,8 +29,10 @@ class OperatorBenefitsDTO:
     staff_payroll_annual: float
     percent_efficiency: float
 
-    contribution_margin_annualized: float
     added_residents_theoretical: float
+    added_residents_use_case: float
+    contribution_margin_annualized: float
+    new_resident_value_monthly: float
     new_resident_value_annual: float
 
 
@@ -43,8 +45,13 @@ class OperatorIotCostDTO:
 
 @dataclass(frozen=True)
 class CalculateRoiResultDTO:
-    staff_payroll_annual: float
-    iot_percent_efficiency: float
+    hardware_cost: float
+    monthly_subscription_cost: float
+    contract_term_months: int
+
+    npv_iot_cost: float
+    monthly_iot_cost: float
+    annualized_iot_cost: float
 
     efficiency_overnight_rounds: float
     efficiency_wellness_checks: float
@@ -54,11 +61,16 @@ class CalculateRoiResultDTO:
     efficiency_total: float
 
     delayed_hiring_value: float
+
+    staff_payroll_annual: float
+    iot_percent_efficiency: float
+
     contribution_margin: float
     added_residents_theoretical: float
-    new_resident_value: float
+    added_residents_use_case: float
+    new_resident_value_theoretical: float
+    new_resident_value_use_case: float
 
-    annualized_iot_cost: float
     net_annual_benefit: float
     roi_percent: float
     payback_months: float | None

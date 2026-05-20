@@ -1,4 +1,4 @@
-# /src/domain/assumptions/operator_calculations.py
+# /src/domain/services/operator_calculations.py
 
 """
 for the system cost annuity:
@@ -14,22 +14,27 @@ for the system cost annuity:
 # HOURS_PER_YEAR_CALENDAR: float = 8760  # 24 * 365
 
 
-
 def monthly_discount_rate(annual_rate: float) -> float:
     return (1 + annual_rate) ** (1 / 12) - 1
 
 
-"""
 def annuity_present_value(
-        monthly_payment: float,
-        monthly_rate: float,
+        monthly_amount: float,
         months: int,
+        *,
+        monthly_rate: float | None = None,
+        annual_rate: float | None = None,
 ) -> float:
-    if monthly_rate == 0:
-        return monthly_payment * months
 
-    return monthly_payment * (1 - (1 + monthly_rate) ** -months) / monthly_rate
-"""
+    if monthly_rate is None and annual_rate is None:
+        return monthly_amount * months
+    # if monthly_rate == 0:
+
+    if monthly_rate is None:
+        monthly_rate = monthly_discount_rate(annual_rate)
+
+    return monthly_amount * (1 - (1 + monthly_rate) ** -months) / monthly_rate
+
 
 def contribution_margin(
         monthly_revenue: float,
@@ -45,7 +50,7 @@ def added_capacity(
     return current_residents * efficiency_gain
 
 
-def present_value_iot_system_cost(
+def perform_iot_npv_cost_calculation(
         hardware_cost: float,
         monthly_payment: float,
         monthly_rate: float,
@@ -69,4 +74,3 @@ def present_value_iot_system_cost(
     total_npv = hardware_cost + npv_subscription
 
     return total_npv
-

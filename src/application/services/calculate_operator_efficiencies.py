@@ -66,7 +66,7 @@ def calculate_annual_gain_room_entries(
 def calculate_annual_gain_delayed_hiring(
         loaded_wage: float,  # hourly wage
         months_delay: float,
-        count_positions_delayed: int = 1
+        count_positions_delayed: int
 ) -> float:
     # --- DELAYED HIRING
 

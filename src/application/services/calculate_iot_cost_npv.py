@@ -2,7 +2,7 @@
 
 from src.domain.services.operator_calculations import (
     monthly_discount_rate,
-    present_value_iot_system_cost,
+    perform_iot_npv_cost_calculation,
 )
 
 from src.application.dto.roi_use_case_dtos import (
@@ -10,7 +10,7 @@ from src.application.dto.roi_use_case_dtos import (
 )
 
 
-def calculate_npv(
+def calculate_operator_iot_system_npv_cost_from_config(
         annual_discount_rate: float,
         hardware_cost: float,
         monthly_subscription_cost: float,
@@ -18,7 +18,7 @@ def calculate_npv(
 ) -> OperatorIotCostDTO:
     monthly_rate = monthly_discount_rate(annual_discount_rate)
 
-    npv_cost = present_value_iot_system_cost(
+    npv_cost = perform_iot_npv_cost_calculation(
         hardware_cost=hardware_cost,
         monthly_payment=monthly_subscription_cost,
         monthly_rate=monthly_rate,
