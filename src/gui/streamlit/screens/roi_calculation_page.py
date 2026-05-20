@@ -5,12 +5,6 @@ from src.application.dto.roi_use_case_dtos import CalculateRoiResultDTO
 
 import streamlit as st
 
-# /src/gui/streamlit/screens/roi_calculation_page.py
-
-from src.application.dto.roi_use_case_dtos import CalculateRoiResultDTO
-
-import streamlit as st
-
 
 def _format_currency(value: float) -> str:
     return f"${value:,.0f}"
@@ -36,7 +30,7 @@ def render_summary_metrics(result: CalculateRoiResultDTO) -> None:
     )
 
     col2.metric(
-        "Annualized IoT Cost",
+        "Annualized Alerta Home Price",
         _format_currency(result.annualized_iot_cost),
     )
 
