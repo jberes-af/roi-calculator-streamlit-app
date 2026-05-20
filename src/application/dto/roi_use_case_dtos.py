@@ -18,18 +18,20 @@ class CalculationInputsDTO:
 
 @dataclass(frozen=True)
 class OperatorBenefitsDTO:
-    contribution_margin: float
-    added_residents_theoretical: float
-    delayed_hiring_value_annual: float
-    new_resident_value_annual: float
-    total_benefit_annual: float
-
     efficiency_annual_overnight_rounds: float
     efficiency_annual_wellness_checks: float
     efficiency_annual_documents: float
     efficiency_annual_prioritization: float
     efficiency_annual_room_entries: float
     efficiency_annual_total: float
+    delayed_hiring_value_annual: float
+
+    staff_payroll_annual: float
+    percent_efficiency: float
+
+    contribution_margin_annualized: float
+    added_residents_theoretical: float
+    new_resident_value_annual: float
 
 
 @dataclass(frozen=True)
@@ -39,3 +41,24 @@ class OperatorIotCostDTO:
     annualized_iot_cost: float
 
 
+@dataclass(frozen=True)
+class CalculateRoiResultDTO:
+    staff_payroll_annual: float
+    iot_percent_efficiency: float
+
+    efficiency_overnight_rounds: float
+    efficiency_wellness_checks: float
+    efficiency_documents: float
+    efficiency_prioritization: float
+    efficiency_room_entries: float
+    efficiency_total: float
+
+    delayed_hiring_value: float
+    contribution_margin: float
+    added_residents_theoretical: float
+    new_resident_value: float
+
+    annualized_iot_cost: float
+    net_annual_benefit: float
+    roi_percent: float
+    payback_months: float | None

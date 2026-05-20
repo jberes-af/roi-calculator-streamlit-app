@@ -10,10 +10,16 @@ for the system cost annuity:
 """
 
 
+# HOURS_PER_YEAR_1_FTE: float = 2080  # 40 hours p week * 52 weeks per year
+# HOURS_PER_YEAR_CALENDAR: float = 8760  # 24 * 365
+
+
+
 def monthly_discount_rate(annual_rate: float) -> float:
     return (1 + annual_rate) ** (1 / 12) - 1
 
 
+"""
 def annuity_present_value(
         monthly_payment: float,
         monthly_rate: float,
@@ -23,7 +29,7 @@ def annuity_present_value(
         return monthly_payment * months
 
     return monthly_payment * (1 - (1 + monthly_rate) ** -months) / monthly_rate
-
+"""
 
 def contribution_margin(
         monthly_revenue: float,
@@ -63,3 +69,4 @@ def present_value_iot_system_cost(
     total_npv = hardware_cost + npv_subscription
 
     return total_npv
+

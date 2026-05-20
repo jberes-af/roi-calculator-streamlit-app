@@ -18,6 +18,7 @@ class FacilityProfile:
     # annual_caregiver_payroll: float
     monthly_revenue_per_resident: float
     monthly_variable_cost_per_resident: float
+    loaded_hourly_wage: float
 
 
 """
@@ -51,6 +52,8 @@ class EfficiencyAssumptions:
     gain_documentation: float
     gain_response_prioritization: float
     gain_room_entries: float
+    hiring_delay_months: int
+    count_positions_delayed: int
 
 
 @dataclass(frozen=True)

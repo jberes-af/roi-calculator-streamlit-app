@@ -1,6 +1,4 @@
-# /src/application/services/calculate_operator_benefits
-
-from src.application.dto.roi_use_case_dtos import OperatorBenefitsDTO
+# /src/application/services/calculate_operator_benefits.py
 
 from src.domain.services.operator_calculations import (
     contribution_margin,
@@ -8,133 +6,42 @@ from src.domain.services.operator_calculations import (
 )
 
 
+HOURS_PER_YEAR_1_FTE: int = 2080  # 40 hours p week * 52 weeks per year
+DAYS_PER_YEAR: int = 365
+MONTHS_PER_YEAR: int = 12
 
-class CalculateOperatorBenefitsService:
+
+class OperatorBenefitsCalculator:
 
     @staticmethod
-    def calculate_new_resident_contribution(
-            facility,
-            assumptions,
+    def calculate_unused_capacity(
+            resident_count: int,
+            caregiver_count: int,
+            loaded_wage: float,  # hourly wage
+            total_efficiencies_annual: float,
     ) -> tuple[float, float, float]:
-        # --- NEW RESIDENT CONTRIBUTION MARGIN
+        payroll_per_fte_per_year: float = loaded_wage * HOURS_PER_YEAR_1_FTE
+        staff_payroll_annual: float = payroll_per_fte_per_year * caregiver_count
+
+        percent_efficiency: float = total_efficiencies_annual / staff_payroll_annual
+        unused_capacity: float = percent_efficiency * resident_count
+
+
+        return staff_payroll_annual, percent_efficiency, unused_capacity
+
+    @staticmethod
+    def calculate_added_resident_value(
+            added_capacity: float,
+            monthly_revenue: float,
+            monthly_cost: float,
+    ) -> tuple[float, float]:
 
         margin = contribution_margin(
-            facility.monthly_revenue_per_resident,
-            facility.monthly_variable_cost_per_resident,
+            monthly_revenue,
+            monthly_cost,
         )
 
-        added_residents = added_capacity(
-            facility.resident_count,
-            assumptions.caregiver_efficiency_gain,
-        )
+        annualized_margin = MONTHS_PER_YEAR * margin
+        added_resident_value = annualized_margin * added_capacity
 
-        occupancy_value_annual = (
-                assumptions.occupancy_lift_residents * margin * 12
-        )
-        return margin, added_residents, occupancy_value_annual
-
-    @staticmethod
-    def calculate_delayed_hiring_benefit(
-            facility,
-            assumptions,
-    ) -> float:
-        # --- DELAYED HIRING
-
-        delayed_hiring_value_annual = 0   # added_residents * margin * 12
-        return delayed_hiring_value_annual
-
-
-
-"""
-    margin = contribution_margin(
-        facility.monthly_revenue_per_resident,
-        facility.monthly_variable_cost_per_resident,
-    )
-
-    added_residents = added_capacity(
-        facility.resident_count,
-        assumptions.caregiver_efficiency_gain,
-    )
-
-    occupancy_value_annual = (
-            assumptions.occupancy_lift_residents * margin * 12
-    )
-
-    # --- DELAYED HIRING
-
-    delayed_hiring_value_annual = added_residents * margin * 12
-
-    # --- WORK SHIFT TIME SAVINGS (MINUTES GAINS)
-
-    assumptions.caregiver_efficiency_gain
-
-    overnight_savings_annual = (
-            assumptions.overnight_hours_saved_per_night
-            * assumptions.loaded_hourly_wage
-            * 365
-    )
-
-    total_annual_benefit = (
-            delayed_hiring_value_annual
-            + occupancy_value_annual
-            + overnight_savings_annual
-    )
-
-    return OperatorBenefitsDTO(
-        margin=margin,
-        added_residents=added_residents,
-        delayed_hiring_value_annual=delayed_hiring_value_annual,
-        occupancy_value_annual=occupancy_value_annual,
-        overnight_savings_annual=overnight_savings_annual,
-        total_annual_benefit=total_annual_benefit,
-    )
-
-"""
-
-
-
-"""
-    margin = contribution_margin(
-        facility.monthly_revenue_per_resident,
-        facility.monthly_variable_cost_per_resident,
-    )
-
-    added_residents = added_capacity(
-        facility.resident_count,
-        assumptions.caregiver_efficiency_gain,
-    )
-
-    occupancy_value_annual = (
-            assumptions.occupancy_lift_residents * margin * 12
-    )
-
-    # --- DELAYED HIRING
-
-    delayed_hiring_value_annual = added_residents * margin * 12
-
-    # --- WORK SHIFT TIME SAVINGS (MINUTES GAINS)
-
-    assumptions.caregiver_efficiency_gain
-
-    overnight_savings_annual = (
-            assumptions.overnight_hours_saved_per_night
-            * assumptions.loaded_hourly_wage
-            * 365
-    )
-
-    total_annual_benefit = (
-            delayed_hiring_value_annual
-            + occupancy_value_annual
-            + overnight_savings_annual
-    )
-
-    return OperatorBenefitsDTO(
-        margin=margin,
-        added_residents=added_residents,
-        delayed_hiring_value_annual=delayed_hiring_value_annual,
-        occupancy_value_annual=occupancy_value_annual,
-        overnight_savings_annual=overnight_savings_annual,
-        total_annual_benefit=total_annual_benefit,
-    )
-
-"""
+        return annualized_margin, added_resident_value

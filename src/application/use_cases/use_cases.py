@@ -3,28 +3,26 @@
 from src.domain.entities.entities import (
     FacilityProfile,
     IotSystemConfiguration,
-    EfficiencyAssumptions, IotPricingCatalog,
-)
-
-from src.domain.value_objects.value_objects import RoiResult
-
-from src.domain.services.operator_calculations import (
-    contribution_margin,
-    added_capacity,
-    monthly_discount_rate,
-    annuity_present_value,
+    EfficiencyAssumptions
 )
 
 from src.application.dto.roi_use_case_dtos import (
     OperatorBenefitsDTO,
-    OperatorIotCostDTO
+    OperatorIotCostDTO, CalculateRoiResultDTO
 )
 
 from src.application.services.calculate_operator_benefits import (
-    CalculateOperatorBenefitsService)
+    OperatorBenefitsCalculator)
 
 from src.application.services.calculate_operator_efficiencies import (
-    CalculateOperatorEfficienciesService)
+    calculate_annual_gain_overnight_rounds,
+    calculate_annual_gain_wellness_checks,
+    calculate_annual_gain_documentation,
+    calculate_annual_gain_response_prioritization,
+    calculate_annual_gain_room_entries,
+    calculate_annual_gain_delayed_hiring,
+
+)
 
 from src.application.services.calculate_iot_cost_npv import calculate_npv
 
@@ -33,10 +31,8 @@ class CalculateRoiUseCase:
 
     def __init__(
             self,
-            calculate_efficiencies: CalculateOperatorEfficienciesService,
-            calculate_benefits: CalculateOperatorBenefitsService,
+            calculate_benefits: OperatorBenefitsCalculator,
     ):
-        self._calculate_efficiencies = calculate_efficiencies
         self._calculate_benefits = calculate_benefits
 
     def execute(
@@ -44,7 +40,7 @@ class CalculateRoiUseCase:
             facility: FacilityProfile,
             iot_system_config: IotSystemConfiguration,
             assumptions: EfficiencyAssumptions,
-    ) -> RoiResult:
+    ) -> CalculateRoiResultDTO:
         # --- OPERATOR BENEFITS
 
         operator_benefits: OperatorBenefitsDTO = self._calculate_operator_benefits(
@@ -67,19 +63,13 @@ class CalculateRoiUseCase:
 
         _print_to_shell_iot_costs(iot_system_config, iot_cost_annual)
 
-        # --- NET BENEFITS
+        # --- NET BENEFIT & ROI
 
-        net_annual_benefit = (
-                operator_benefits.total_annual_benefit
-                - iot_cost_annual.annualized_iot_cost
-        )
-
-        monthly_benefit = operator_benefits.total_annual_benefit / 12
-
-        # --- ROI
+        net_benefit_annualized = operator_benefits.new_resident_value_annual - iot_cost_annual.annualized_iot_cost
+        monthly_benefit: float = net_benefit_annualized / 12
 
         roi_percent = (
-            net_annual_benefit / iot_cost_annual.annualized_iot_cost
+            net_benefit_annualized / iot_cost_annual.annualized_iot_cost
             if iot_cost_annual.annualized_iot_cost > 0
             else 0
         )
@@ -90,15 +80,23 @@ class CalculateRoiUseCase:
             else None
         )
 
-        return RoiResult(
-            contribution_margin_per_resident=operator_benefits.margin,
-            added_resident_capacity=operator_benefits.added_residents,
-            delayed_hiring_value_annual=operator_benefits.delayed_hiring_value_annual,
-            occupancy_value_annual=operator_benefits.occupancy_value_annual,
-            overnight_savings_annual=operator_benefits.overnight_savings_annual,
-            total_annual_benefit=operator_benefits.total_annual_benefit,
+        return CalculateRoiResultDTO(
+            staff_payroll_annual=operator_benefits.staff_payroll_annual,
+            iot_percent_efficiency=operator_benefits.percent_efficiency,
+
+            efficiency_overnight_rounds=operator_benefits.efficiency_annual_overnight_rounds,
+            efficiency_wellness_checks=operator_benefits.efficiency_annual_wellness_checks,
+            efficiency_documents=operator_benefits.efficiency_annual_documents,
+            efficiency_prioritization=operator_benefits.efficiency_annual_prioritization,
+            efficiency_room_entries=operator_benefits.efficiency_annual_room_entries,
+            efficiency_total=operator_benefits.efficiency_annual_total,
+            delayed_hiring_value=operator_benefits.delayed_hiring_value_annual,
+            contribution_margin=operator_benefits.contribution_margin_annualized,
+            added_residents_theoretical=operator_benefits.added_residents_theoretical,
+            new_resident_value=operator_benefits.new_resident_value_annual,
+
             annualized_iot_cost=iot_cost_annual.annualized_iot_cost,
-            net_annual_benefit=net_annual_benefit,
+            net_annual_benefit=net_benefit_annualized,
             roi_percent=roi_percent,
             payback_months=payback_months,
         )
@@ -108,50 +106,86 @@ class CalculateRoiUseCase:
             facility: FacilityProfile,
             assumptions: EfficiencyAssumptions,
     ):
-        # --- CALCULATE EFFICIENCIES
+        # --- CALCULATE ANNUAL EFFICIENCIES
 
-        overnight_rounds = self._calculate_efficiencies.calculate_annual_gain_overnight_rounds()
-        wellness_checks = self._calculate_efficiencies.calculate_annual_gain_wellness_checks()
-        documents = self._calculate_efficiencies.calculate_annual_gain_documentation()
-        prioritization = self._calculate_efficiencies.calculate_annual_gain_response_prioritization()
-        room_entries = self._calculate_efficiencies.calculate_annual_gain_room_entries()
-        total_efficiencies = (
-                overnight_rounds + wellness_checks + documents + prioritization + room_entries
+        loaded_wage: float = facility.loaded_hourly_wage
+
+        overnight_rounds = calculate_annual_gain_overnight_rounds(
+            loaded_wage=loaded_wage,
+            gain_overnight_rounds_minutes=assumptions.gain_overnight_rounds,
+        )
+
+        wellness_checks = calculate_annual_gain_wellness_checks(
+            loaded_wage=loaded_wage,
+            gain_wellness_checks_minutes=assumptions.gain_wellness_checks,
+        )
+
+        documents = calculate_annual_gain_documentation(
+            loaded_wage=loaded_wage,
+            gain_documentation_minutes=assumptions.gain_documentation,
+        )
+
+        prioritization = calculate_annual_gain_response_prioritization(
+            loaded_wage=loaded_wage,
+            gain_prioritization_minutes=assumptions.gain_response_prioritization,
+        )
+
+        room_entries = calculate_annual_gain_room_entries(
+            loaded_wage=loaded_wage,
+            gain_room_entries_minutes=assumptions.gain_room_entries,
+        )
+
+        hiring_delay = calculate_annual_gain_delayed_hiring(
+            loaded_wage=loaded_wage,
+            months_delay=assumptions.hiring_delay_months,
+            count_positions_delayed=assumptions.count_positions_delayed,
+        )
+
+        total_efficiencies_annual = (
+                overnight_rounds
+                + wellness_checks
+                + documents
+                + prioritization
+                + room_entries
+                + hiring_delay
         )
 
         # --- CALCULATE BENEFITS
 
         (
-            margin,
-            added_residents,
-            new_resident_value,
-        ) = self._calculate_benefits.calculate_new_resident_contribution(
-            facility.monthly_revenue_per_resident,
-            facility.monthly_variable_cost_per_resident,
-
+            staff_payroll_annual,
+            percent_efficiency,
+            unused_capacity,
+        ) = self._calculate_benefits.calculate_unused_capacity(
+            resident_count=facility.resident_count,
+            caregiver_count=facility.caregiver_count,
+            loaded_wage=facility.loaded_hourly_wage,
+            total_efficiencies_annual=total_efficiencies_annual,
         )
 
-        delayed_hiring = self._calculate_benefits.calculate_new_resident_contribution()
-
-        total_annual_benefit = (
-                total_efficiencies
-                + new_resident_value
-                + delayed_hiring
+        (
+            annualized_margin,
+            added_resident_value,
+        ) = self._calculate_benefits.calculate_added_resident_value(
+            added_capacity=unused_capacity,
+            monthly_revenue=facility.monthly_revenue_per_resident,
+            monthly_cost=facility.monthly_variable_cost_per_resident,
         )
 
         return OperatorBenefitsDTO(
-            contribution_margin=margin,
-            added_residents_theoretical=added_residents,
-            new_resident_value_annual=new_resident_value,
-            delayed_hiring_value_annual=delayed_hiring,
-            total_benefit_annual=total_annual_benefit,
-
             efficiency_annual_overnight_rounds=overnight_rounds,
             efficiency_annual_wellness_checks=wellness_checks,
             efficiency_annual_documents=documents,
             efficiency_annual_prioritization=prioritization,
             efficiency_annual_room_entries=room_entries,
-            efficiency_annual_total=total_efficiencies,
+            efficiency_annual_total=total_efficiencies_annual,
+            delayed_hiring_value_annual=hiring_delay,
+
+            staff_payroll_annual=staff_payroll_annual,
+            percent_efficiency=percent_efficiency,
+            contribution_margin_annualized=annualized_margin,
+            added_residents_theoretical=unused_capacity,
+            new_resident_value_annual=added_resident_value,
         )
 
 

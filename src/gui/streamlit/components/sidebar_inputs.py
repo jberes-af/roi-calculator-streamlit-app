@@ -136,6 +136,7 @@ def render_iot_system_inputs(
         options=list(KitType),
         format_func=lambda selected_kit: get_kit_label(selected_kit, catalog),
         key="kit_type",
+        index=1,
     )
 
     kit_installations = st.number_input(
@@ -231,49 +232,76 @@ def render_efficiency_inputs(state) -> tuple[float, float, float]:
 """
 
 
-def render_efficiency_inputs(state) -> tuple[float, float, float, float, float]:
+def render_efficiency_inputs(state) -> tuple[float, float, float, float, float, int, int]:
     st.write("")
     st.header("Efficiency Assumptions")
 
     gain_overnight_rounds = st.slider(
-        "Gain Overnight Rounds (minutes)",
-        min_value=0.0,
-        max_value=720.0,
+        "Time Saved Overnight Rounds (1 Shift) (minutes)",
+        min_value=0,
+        max_value=720,
         value=state.gain_overnight_rounds,
         key="gain_overnight_rounds",
+        step=1,
     )
 
     gain_wellness_checks = st.slider(
-        "Time Saved per Day - Wellness Checks (minutes)",
-        min_value=0.0,
-        max_value=720.0,
+        "Time Saved per Day (3 Shifts) - Wellness Checks (minutes)",
+        min_value=0,
+        max_value=720,
         value=state.gain_wellness_checks,
         key="gain_wellness_checks",
+        step=1,
     )
 
     gain_documentation = st.slider(
-        "Time Saved per Day - Documentation (minutes)",
-        min_value=0.0,
-        max_value=720.0,
+        "Time Saved per Day (3 Shifts) - Documentation (minutes)",
+        min_value=0,
+        max_value=720,
         value=state.gain_documentation,
         key="gain_documentation",
+        step=1,
     )
 
     gain_response_prioritization = st.slider(
-        "Time Saved per Day - Response Prioritization (minutes)",
-        min_value=0.0,
-        max_value=720.0,
+        "Time Saved per Day (3 Shifts) - Response Prioritization (minutes)",
+        min_value=0,
+        max_value=720,
         value=state.gain_response_prioritization,
         key="gain_response_prioritization",
+        step=1,
     )
 
     gain_room_entries = st.slider(
-        "Time Saved per Day - Unnecessary Room Entries (minutes)",
-        min_value=0.0,
-        max_value=720.0,
+        "Time Saved per Day (3 Shifts) - Unnecessary Room Entries (minutes)",
+        min_value=0,
+        max_value=720,
         value=state.gain_room_entries,
         key="gain_room_entries",
+        step=1,
     )
+
+    st.write("")
+    st.write("New Caregiver Hiring Delay")
+    col_e1, col_e2 = st.columns([1, 1])
+
+    with col_e1:
+        months_hiring_delay = st.number_input(
+            "Delay Period (months)",
+            min_value=0,
+            max_value=12,
+            value=state.gain_hiring_delay,
+            key="gain_hiring_delay",
+        )
+
+    with col_e2:
+        count_positions_delayed = st.number_input(
+            "Number of Positions",
+            min_value=0,
+            max_value=10,
+            value=state.count_positioned_delayed,
+            key="count_positioned_delayed",
+        )
 
     return (
         gain_overnight_rounds,
@@ -281,6 +309,8 @@ def render_efficiency_inputs(state) -> tuple[float, float, float, float, float]:
         gain_documentation,
         gain_response_prioritization,
         gain_room_entries,
+        months_hiring_delay,
+        count_positions_delayed,
     )
 
 
@@ -338,6 +368,8 @@ def get_calculation_inputs() -> CalculationInputsDTO:
             gain_documentation,
             gain_response_prioritization,
             gain_room_entries,
+            months_hiring_delay,
+            count_positions_delayed,
         ) = render_efficiency_inputs(state)
 
         (
@@ -369,6 +401,7 @@ def get_calculation_inputs() -> CalculationInputsDTO:
         # annual_caregiver_payroll=annual_payroll,
         monthly_revenue_per_resident=monthly_revenue,
         monthly_variable_cost_per_resident=monthly_variable_cost,
+        loaded_hourly_wage=loaded_wage,
     )
 
     iot_system_config = IotSystemConfiguration(
@@ -386,6 +419,8 @@ def get_calculation_inputs() -> CalculationInputsDTO:
         gain_documentation=gain_documentation,
         gain_response_prioritization=gain_response_prioritization,
         gain_room_entries=gain_room_entries,
+        hiring_delay_months=months_hiring_delay,
+        count_positions_delayed=count_positions_delayed,
     )
 
     return CalculationInputsDTO(
