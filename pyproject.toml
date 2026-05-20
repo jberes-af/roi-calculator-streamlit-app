@@ -1,11 +1,11 @@
 [project]
-name = "customer-savings"
+name = "alerta-home-roi-calculator"
 version = "0.1.0"
 dependencies = [
     "streamlit",
     "pandas",
-    "numpy",
+    "numpy"
 ]
 
 [tool.setuptools]
-package-dir = {"" = "."}
+packages = ["src"]
